@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { PageData } from './$types'
+    import type { PageData } from "./$types"
     import FileIcon from "./FileIcon.svelte"
     export let data: PageData
 </script>
@@ -17,6 +17,8 @@
                     <h2 class="text-white/50">{file.isDirectory ? `/${file.slug}` : file.size}</h2>
                 </div>
             </a>
+        {:else}
+            <h2 class="text-white/40 w-full text-center">This directory is empty.</h2>
         {/each}
     </div>
 </div>

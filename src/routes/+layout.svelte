@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-    <title>CDN - Flyte</title>
+    <title>Flyte CDN</title>
 </svelte:head>
 
 <div class="bg-[#0d0b0d] min-h-screen min-w-screen md:flex md:justify-center">

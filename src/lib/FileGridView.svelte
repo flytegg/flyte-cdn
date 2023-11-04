@@ -6,7 +6,7 @@
 <div class="container grid">
     <div class="flex flex-wrap justify-center md:justify-normal gap-4">
         {#each data.files as file}
-            <a href={`${file.isDirectory ? "" : "https://cdn.internal.flyte.gg"}${data.slug ? `${data.slug}/` : `/`}${file.slug}`} class="bg-white/5 flex flex-col justify-center items-center space-y-5 aspect-square h-72 w-72 rounded-2xl p-4">
+            <a href={`${file.isDirectory ? "" : "https://cdn.internal.flyte.gg"}${data.slug ? `${data.slug}` : ""}/${file.slug}`} class="bg-white/5 flex flex-col justify-center items-center space-y-5 aspect-square h-72 w-72 rounded-2xl p-4">
                 {#if file.favicon}
                     <img src={file.favicon} alt="" class="w-40 h-40 bg-black/20 p-6 rounded-2xl aspect-square">
                 {:else}

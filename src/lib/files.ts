@@ -1,4 +1,4 @@
-const url = "https://cdn.internal.flyte.gg/"
+export const url = "https://cdn.internal.flyte.gg/"
 const fileRegex = /<a href="([^"]+)">[^<]+<\/a>\s+(\d{2}-[A-Za-z]{3}-\d{4} \d{2}:\d{2})\s+(-|\d+)/g
 const hrefsToExclude = ["../", "cdn-data.json"]
 
@@ -65,10 +65,10 @@ const serialize = async (files: File[]) => {
 }
 
 const queryDirectoryCdnData = async (file: File) => {
-    const request = await fetch(`https://cdn.internal.flyte.gg/${file.slug}/cdn-data.json`)
+    const request = await fetch(`${url}${file.slug}/cdn-data.json`)
     if (!request.ok) return new Directory(file.slug, file.lastModified, null, null, file.sizeBytes)
     const response = await request.json()
-    return new Directory(file.slug, file.lastModified, `https://cdn.internal.flyte.gg/${file.slug}/favicon.png`, response.name)
+    return new Directory(file.slug, file.lastModified, `${url}${file.slug}/favicon.png`, response.name)
 }
 
 class File {

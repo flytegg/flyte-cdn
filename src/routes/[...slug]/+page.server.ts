@@ -4,7 +4,7 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ url, params }) => {
 	return { 
         slug: url.pathname,
-        files: await retrieveAllFilesFor(`https://cdn.internal.flyte.gg/${params.slug}`) 
+        files: await retrieveAllFilesFor(params.slug) 
     }
 }
 

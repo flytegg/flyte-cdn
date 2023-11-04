@@ -1,7 +1,9 @@
+const url = "https://cdn.internal.flyte.gg/"
 const fileRegex = /<a href="([^"]+)">[^<]+<\/a>\s+(\d{2}-[A-Za-z]{3}-\d{4} \d{2}:\d{2})\s+(-|\d+)/g
+const hrefsToExclude = ["../", "cdn-data.json"]
 
-export const retrieveAllFilesFor = async (page: string) => {
-    return await serialize(await extractSlugs(await (await fetch(page)).text()))
+export const retrieveAllFilesFor = async (slug: string = "") => {
+    return await serialize(await extractSlugs(await (await fetch(url + slug)).text()))
 }
 
 const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
@@ -19,10 +21,11 @@ export const formatBytes = (bytes: number, decimals: number = 2) => {
 
 const extractSlugs = async (page: string) => {
     return [...page.matchAll(fileRegex)]
-        .filter(match => match[1] !== "../")
-        .filter(match => match[1] !== "cdn-data.json")
+        .filter(match => !hrefsToExclude.includes(match[1]))
         .map(match => {
             let slug = match[1]
+            const lastModified = match[2]
+            const fileSize = match[3]
 
             const isDirectory = slug.endsWith("/")
 
@@ -34,7 +37,7 @@ const extractSlugs = async (page: string) => {
                 extension = split[split.length - 1]
             }
 
-            return new File(slug, match[2], extension, match[3] === "-" ? -1 : +match[3], isDirectory)
+            return new File(slug, lastModified, extension, fileSize === "-" ? -1 : +fileSize, isDirectory)
         })
 }
 

@@ -1,9 +1,9 @@
-export const url = "https://cdn.internal.flyte.gg"
+const url = "https://cdn.internal.flyte.gg"
 const fileRegex = /<a href="([^"]+)">[^<]+<\/a>\s+(\d{2}-[A-Za-z]{3}-\d{4} \d{2}:\d{2})\s+(-|\d+)/g
 const hrefsToExclude = ["../", "cdn-data.json"]
 
 export const retrieveAllFilesFor = async (slug: string = "") => {
-    return await serialize(await extractSlugs(await (await fetch(`${url}/${slug}`)).text()))
+    return await serialize(await extractSlugs(slug, await (await fetch(`${url}/${slug}`)).text()))
 }
 
 const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
@@ -19,7 +19,9 @@ export const formatBytes = (bytes: number, decimals: number = 2) => {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 
-const extractSlugs = async (page: string) => {
+export const buildAbsoluteUrl = (file: File, slug: string) => `${file.isLink ? file.slug : ((file.isDirectory ? "" : url) + (slug ? `${slug}` : "") + '/' + file.slug)}`
+
+const extractSlugs = async (dirSlug: string, page: string) => {
     return [...page.matchAll(fileRegex)]
         .filter(match => !hrefsToExclude.includes(match[1]))
         .map(match => {
@@ -28,6 +30,7 @@ const extractSlugs = async (page: string) => {
             const fileSize = match[3]
 
             const isDirectory = slug.endsWith("/")
+            const isLink = slug.endsWith("-link.json")
 
             slug = slug.replaceAll("/", "")
 
@@ -37,29 +40,43 @@ const extractSlugs = async (page: string) => {
                 extension = split[split.length - 1]
             }
 
-            return new File(slug, lastModified, extension, fileSize === "-" ? -1 : +fileSize, isDirectory)
+            return new File(slug, lastModified, extension, fileSize === "-" ? -1 : +fileSize, isDirectory, isLink, dirSlug)
         })
 }
 
 const serialize = async (files: File[]) => {
     return await Promise.all(files.map(async file => {
-        if (!file.isDirectory) {
-            return {
-                slug: file.slug,
-                lastModified: file.lastModified,
-                extension: file.extension,
-                size: formatBytes(file.sizeBytes),
-                isDirectory: file.isDirectory
-            }
-        } else {
+        if (file.isDirectory) {
             const directory: Directory = await queryDirectoryCdnData(file)
             return {
                 slug: directory.slug,
                 lastModified: directory.lastModified,
                 isDirectory: directory.isDirectory,
+                isLink: directory.isLink,
                 favicon: directory.favicon,
                 name: directory.name,
             }
+        }
+
+        if (file.isLink) {
+            const link: Link = await readLinkData(file)
+            console.log(link)
+            return {
+                slug: link.slug,
+                isDirectory: link.isDirectory,
+                isLink: link.isLink,
+                name: link.name,
+                size: link.description
+            }
+        }
+
+        return {
+            slug: file.slug,
+            lastModified: file.lastModified,
+            extension: file.extension,
+            size: formatBytes(file.sizeBytes),
+            isDirectory: file.isDirectory,
+            isLink: file.isLink
         }
     }))
 }
@@ -71,16 +88,34 @@ const queryDirectoryCdnData = async (file: File) => {
     return new Directory(file.slug, file.lastModified, `${url}/${file.slug}/favicon.png`, response.name)
 }
 
+const readLinkData = async (file: File) => {
+    const request = await fetch(`${url}/${file.dirSlug}/${file.slug}`)
+    if (!request.ok) return new Link(file.slug, file.slug, file.sizeBytes.toString())
+    const response = await request.json()
+    return new Link(response.redirect, response.name, response.description)
+}
+
 class File {
     constructor(
         readonly slug: string,
         readonly lastModified: string,
         readonly extension: string,
         readonly sizeBytes: number,
-        readonly isDirectory: boolean
+        readonly isDirectory: boolean,
+        readonly isLink: boolean,
+        readonly dirSlug: string
     ) {}
 }
 
+class Link extends File {
+    constructor(
+        readonly slug: string,
+        readonly name: string | null, 
+        readonly description: string | null,
+    ) {
+        super(slug, "", "", -1, false, true, "");
+    }
+}
 class Directory extends File {
     constructor(
         readonly slug: string,
@@ -89,6 +124,6 @@ class Directory extends File {
         readonly name: string | null, 
         readonly sizeBytes: number = -1,
     ) {
-        super(slug, lastModified, "", sizeBytes, true);
+        super(slug, lastModified, "", sizeBytes, true, false, "");
     }
 }

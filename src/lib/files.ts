@@ -1,4 +1,4 @@
-export const url = "https://cdn.internal.flyte.gg"
+const url = "https://cdn.internal.flyte.gg"
 const fileRegex = /<a href="([^"]+)">[^<]+<\/a>\s+(\d{2}-[A-Za-z]{3}-\d{4} \d{2}:\d{2})\s+(-|\d+)/g
 const hrefsToExclude = ["../", "cdn-data.json"]
 
@@ -18,6 +18,8 @@ export const formatBytes = (bytes: number, decimals: number = 2) => {
   
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
+
+export const buildAbsoluteUrl = (file: File, slug: string) => `${file.isDirectory ? "" : url}${slug ? `${slug}` : ""}/${file.slug}`
 
 const extractSlugs = async (page: string) => {
     return [...page.matchAll(fileRegex)]
